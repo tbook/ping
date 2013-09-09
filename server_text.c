@@ -1,6 +1,3 @@
-/*
-  Comp429 project 1, ping pong message and simple web server
- */
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -254,8 +251,6 @@ int main(int argc, char **argv) {
 
           /* we have data from a client */	      
           count = recv(current->socket, buf, BUF_LEN, 0);
-          printf("count is %d.\n", count);
-          printf("buffer is %s.\n", buf + 10);
 
           if (count <= 0) {
             /* something is wrong */
@@ -263,7 +258,7 @@ int main(int argc, char **argv) {
               printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
             }
             else {
-              perror("error receiving from a client");
+              perror("error receiving from a client, closed down the connecion");
             }
 
             /* connection is closed, clean up */
@@ -288,64 +283,89 @@ int main(int argc, char **argv) {
               /*shift the pointer by 1 byte*/
               tmp_buf = buf + 1;
 
-              int tmp_count = recv(current->socket, tmp_buf, BUF_LEN - 1, 0);
-              if(tmp_count <=0){
-                close(current->socket);
-                dump(&head, current->socket);
-                continue;
+              count += recv(current->socket, tmp_buf, BUF_LEN - 1, 0);
+              if (count == 1) {
+                printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
               }
-              count += tmp_count;
+              else if(count < 1){
+                perror("receiving continues: error receiving from a client");
+              }
+              /*close and clean up*/
+              close(current->socket);
+              dump(&head, current->socket);
+
+              /*skip the rest part of this iteration*/
+              continue;
             }
 
-            /*now the size is store in the first two bytes of buf*/
-            printf("buf[0] is %d. buf[1] is %d.\n", buf[0], buf[1]);
-
-            short msg_size = ntohs(*(short *)buf) + SIZE_WIDTH + TIME_WIDTH;
+            /*now the size is stored in the first two bytes of buf*/
+            unsigned short msg_size = ntohs(*(unsigned short *)buf);
+#ifdef DEBUG
             printf("size known :%d.\n", msg_size);
+#endif //DEBUG
             int connection_closed = 0;
 
             /*now we know the size of a message, augment the buf if needed.*/
             if (BUF_LEN < msg_size){
+#ifdef DEBUG
                 printf("new buf\n");
+#endif //DEBUG
                 char* new_buf = (char*)malloc(msg_size);
                 memcpy(new_buf, buf, count);
                 free(buf);
                 buf = new_buf;
+                BUF_LEN = msg_size;
             }
 
             /*incomplete, continue to receive.*/
-            int buf_len = msg_size - count;
+            int remain_len = msg_size - count;
+                tmp_buf    = buf + count;
+            int buf_end    = (int)buf + msg_size;
+#ifdef DEBUG
             printf("msg_size is %d.\n", msg_size);
-            while(msg_size != count){
-//              printf("multiple receiving.\n");
-              int tmp_count = recv(current->socket, tmp_buf, BUF_LEN - 1, 0);
-              if(tmp_count <= 0){
-//                if(tmp_count == 0){
-                  printf("recv error.\n");
-                  connection_closed = 1;
-                  close(current->socket);
-                  dump(&head, current->socket);
-                  break;
-//                }
+#endif //DEBUG
+            while(tmp_buf < buf_end){
+              count = recv(current->socket, tmp_buf, remain_len, 0);
+              if(count <= 0){
+                if(count == 0){
+                  printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
+                }
+                else if(count < 0){
+                  perror("error receiving from the client");
+                }
+                connection_closed = 1;
+                close(current->socket);
+                dump(&head, current->socket);
+                break;
               }
-              tmp_buf +=  tmp_count;
-              buf_len += -tmp_count;
+              tmp_buf    +=  count;
+              remain_len += -count;
             }// continue to receive
 
             if(connection_closed == 1)
                 continue;
 
+#ifdef DEBUG
             printf("sending pong message.\n");
+#endif
             /*now we got all the bytes, send back a pong message*/
-            while(msg_size > 0){ // still incomplete
-              count = send(current->socket, buf, msg_size, MSG_DONTWAIT);
+            tmp_buf    = buf;
+            remain_len = msg_size;
+            while(tmp_buf < buf_end){ // still incomplete
+              count = send(current->socket, tmp_buf, remain_len, MSG_DONTWAIT);
               if(count <= 0){
-                printf("send error.\n");
+                if(count == 0){
+                  printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
+                }
+                else if(count < 0){
+                  perror("error sending to the client");
+                }
                 close(current->socket);
                 dump(&head, current->socket);
                 break;
               }
-              msg_size -= count;
+              tmp_buf    += count;
+              remain_len -= count;
             }// send back pong message
               
           } // we at least get something.
