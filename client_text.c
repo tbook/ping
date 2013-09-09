@@ -15,6 +15,7 @@
 #define TIME_WIDTH1 4
 #define TIME_WIDTH2 4
 #define EXTRA_WIDTH (SIZE_WIDTH + TIME_WIDTH1 + TIME_WIDTH2)
+#define DATA_SIZE (msg_size - EXTRA_WIDTH)
 
 #define PRINT_OPTS() do{\
     perror("Expected format of commandline:\n"\
@@ -31,7 +32,6 @@
    and the server port number */
 
 int main(int argc, char** argv) {
-  double total_latency = 0.0;
   long total_sec = 0;
   long total_usec = 0;
 
@@ -60,9 +60,14 @@ int main(int argc, char** argv) {
   /* server port number */
   unsigned short server_port = atoi (argv[2]);
 
-  unsigned short data_size = atoi (argv[3]);
+  unsigned short msg_size = atoi (argv[3]);
 
   unsigned short num_messages = atoi (argv[4]);
+
+#ifdef DEBUG
+  printf("msg_size is %d\n"
+         "num_messages is %d\n", msg_size, num_messages);
+#endif //DEBUG
 
   /* allocate a memory buffer in the heap */
   /* putting a buffer on the stack like:
@@ -71,14 +76,12 @@ int main(int argc, char** argv) {
 
      leaves the potential for
      buffer overflow vulnerability */
-  char *msg_buffer = (char*) malloc((EXTRA_WIDTH + data_size) * sizeof(char));
+  char *msg_buffer = (char*) malloc(msg_size * sizeof(char));
   if (!msg_buffer)
     {
       perror("failed to allocated buffer");
       abort();
     }
-
-  char* data_buffer = msg_buffer + EXTRA_WIDTH;
 
   /* create a socket */
   if ((sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -100,8 +103,11 @@ int main(int argc, char** argv) {
       abort();
     }
 
+#ifdef TEST_TEXT
   /*make the message*/
   /*read message*/
+  /*There should be randome data in the buffer now.*/
+  char* data_buffer = msg_buffer + EXTRA_WIDTH;
   printf("Please type in message:\n");
   fgets(data_buffer, data_size, stdin);
 
@@ -109,32 +115,36 @@ int main(int argc, char** argv) {
   data_buffer[data_size-1] = 0;
   data_buffer[strlen(data_buffer)-1] = 0;
   data_size = strlen(data_buffer);
-  int message_size = data_size + EXTRA_WIDTH;
-  *(unsigned short*)msg_buffer = htons(data_size);
+  msg_size = data_size + EXTRA_WIDTH;
+
   printf("string length is %d.\n", strlen(data_buffer));
   printf("This is the message the client reads:\n%s.\n", data_buffer);
+#endif// TEST_TEXT
 
+  *(unsigned short*)msg_buffer = htons(msg_size);
   int count = 0;
   while (count < num_messages) {
-#ifdef DEBUG
-    printf("Sending message %d:\n%s\n", count, data_buffer);
-#endif
     /*get time before send*/
     gettimeofday(&time_stamp, NULL);
     
     /*setup send message, message size and the data_buffer has been set*/
-    *(int*)(msg_buffer + SIZE_WIDTH) = ntohl(time_stamp.tv_sec);
-    *(int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1) = ntohl(time_stamp.tv_usec);
+    *(unsigned int*)(msg_buffer + SIZE_WIDTH) = ntohl(time_stamp.tv_sec);
+    *(unsigned int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1) = ntohl(time_stamp.tv_usec);
 
     /*send the ping message*/
-    int buffer_end = msg_buffer + message_size;
-    int remain_len = buffer_end - (int)msg_buffer;
+    int buffer_end = msg_buffer + msg_size;
+    int remain_len = msg_size;
     char* buffer = msg_buffer;
     int tmp_count;
     while(buffer < buffer_end){
       tmp_count = send(sock, buffer, remain_len, 0);
-      if(tmp_count <= 0){
-        perror("error sending...\n");
+      if(tmp_count < 0){
+        perror("error sending to server...\n");
+        abort();
+      }
+      else if(tmp_count == 0){
+        /*what if the client receive returns 0?*/
+        printf("send returns 0.\n");
         abort();
       }
       buffer     +=  tmp_count;
@@ -146,23 +156,24 @@ int main(int argc, char** argv) {
     remain_len = buffer_end - (int)buffer;
     while(buffer < buffer_end){
       tmp_count = recv(sock, buffer, remain_len, 0);
-      if(tmp_count <= 0){
-        perror("error receiving...\n");
+      if(tmp_count < 0){
+        perror("error receiving from server...\n");
         abort();
+      }
+      else if(tmp_count == 0){
+        /*what if the client receive returns 0?*/
       }
       buffer     +=  tmp_count;
       remain_len += -tmp_count;
     }
     
     gettimeofday(&time_stamp, NULL);
-    int past_sec = ntohl(*(int*)(msg_buffer + SIZE_WIDTH));
-    printf("latency is %d.\n", time_stamp.tv_sec - past_sec);
-    total_sec  += time_stamp.tv_sec  - ntohl(*(int*)(msg_buffer + SIZE_WIDTH));
-    total_usec += time_stamp.tv_usec - ntohl(*(int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1));
+    total_sec  += time_stamp.tv_sec  - ntohl(*(unsigned int*)(msg_buffer + SIZE_WIDTH));
+    total_usec += time_stamp.tv_usec - ntohl(*(unsigned int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1));
     count++;
   }
 
-  printf("The average latency is %.3fms.\n", total_sec * 1000 + total_usec/1000.0);
+  printf("The average latency is %.3fms.\n", (total_sec * 1000 + total_usec/1000.0)/num_messages);
 
   return 0;
 }
