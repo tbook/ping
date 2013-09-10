@@ -72,7 +72,6 @@ int main(int argc, char **argv) {
 
   int server_port;
   char *mode;
-  char *root;
   char webMode = 0; //0 = false; 1 = true
 
   /*Parse Arguments*/
@@ -98,7 +97,10 @@ int main(int argc, char **argv) {
   }
 
   if (argc > 3) {
-    root = argv[3];
+    if (parse_root(argv[3]) < 0) {
+      fprintf(stderr, "Invalid server root\n");
+      return -1;
+    }
   }
 
   /* socket and option variables */
