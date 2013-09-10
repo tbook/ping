@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include "httpd.h"
 
 #define SIZE_WIDTH 2
 #define TIME_WIDTH 8
@@ -69,13 +70,41 @@ void add(struct node *head, int socket, struct sockaddr_in addr) {
 /* simple server, takes one parameter, the server port number */
 int main(int argc, char **argv) {
 
+  int server_port;
+  char *mode;
+  char *root;
+  char webMode = 0; //0 = false; 1 = true
+
+  /*Parse Arguments*/
+  if ((argc < 2) || (argc > 4)) {
+    fprintf(stderr, "Syntax: %s port [mode] [root_directory]\n",argv[0]);
+    return -1;
+  }
+
+  if (sscanf(argv[1], "%d", &server_port) < 1) {
+    fprintf(stderr, "port should be numeric\n");
+    return -1;
+  }
+
+  if (argc > 2) {
+    mode = argv[2];
+    int modelen = strlen(mode);
+    if (modelen > 2) {
+      if (strncmp(mode, "www", 3))
+        webMode = 1;
+    }
+  }
+
+  if (argc > 3) {
+    root = argv[3];
+  }
+
   /* socket and option variables */
   int sock, new_sock, max;
   int optval = 1;
 
   /* server socket address variables */
   struct sockaddr_in sin, addr;
-  unsigned short server_port = atoi(argv[1]);
 
   /* socket address variables for a connected client */
   socklen_t addr_len = sizeof(struct sockaddr_in);
@@ -189,9 +218,14 @@ int main(int argc, char **argv) {
         new_sock = accept (sock, (struct sockaddr *) &addr, &addr_len);
 	      
         if (new_sock < 0){
-	  perror ("error accepting connection");
-	  abort ();
-	}
+	         perror ("error accepting connection");
+	         abort ();
+	      }
+
+        if (webMode) {
+          service_request(&new_sock);
+          continue;
+        }
 
         /* make the socket non-blocking so send and recv will
            return immediately if the socket is not ready.
@@ -278,6 +312,7 @@ int main(int argc, char **argv) {
             /* for this simple example, we expect the message to
                be a string, and the last byte of the string to be 0,
                i.e. end of string */
+
             char* tmp_buf;
             if (count == 1){
               /*shift the pointer by 1 byte*/
