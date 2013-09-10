@@ -10,10 +10,12 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include "libmagic/magic.h"
 
 #define BUFFER_SIZE 1024	//Input buffer size in bytes
 
-#define DEBUG 2
+#define DEBUG 0
 
 #define ERROR_MSG "<html><head><title>Error %d</title></head> \
  <body> \
@@ -22,7 +24,7 @@
  </body> \
  </html>"
 
-#define OK_MSG "HTTP/1.1 200 OK \r\nContent-Type: text/html \r\n\r\n"
+#define OK_MSG "HTTP/1.1 200 OK \r\nContent-Type: %s \r\n\r\n"
 
 static char *serverPath;
 
@@ -34,6 +36,7 @@ int parse(char *buffer) {
 	int version_major;
 	int version_minor;
 	char *temp_buf;
+	struct stat s;
 
 	if (sscanf(buffer, "GET %s HTTP/%d.%d \r\n\r\n", buffer, &version_major, &version_minor) != 3) {
 		fprintf(stderr, "Failed to scan client request: %s\n", buffer);
@@ -56,6 +59,18 @@ int parse(char *buffer) {
 	strcpy(temp_buf, buffer);
 	sprintf(buffer,"%s%s",serverPath,temp_buf);
 	free(temp_buf);
+
+	//Handle directories
+	stat(buffer, &s);
+	if (s.st_mode & S_IFDIR) {
+		if (DEBUG > 1)
+			printf("Request is for a directory.\n");
+		if (strlen(buffer) + strlen("/index.html") >= BUFFER_SIZE)  {
+			fprintf(stderr, "Request too long for buffer: %s%s/index.html\n", serverPath,buffer);
+			return -1;	
+		}
+		strcpy(buffer + strlen(buffer), "/index.html");
+	}
 
 	return 0;
 }
@@ -89,6 +104,7 @@ int service_request(int *socket_fd) {
 	int result;
 	int content_fd;
 	int size;
+	char *mime_type;
 
 	request_buffer = malloc(BUFFER_SIZE);
 	if (request_buffer == NULL) {
@@ -126,17 +142,22 @@ int service_request(int *socket_fd) {
 		return -1;	
 	}
 
+	//Get the MIME type
+	magichandle_t* mh;
+	mh = magic_init (MAGIC_FLAGS_NONE);
+	magic_read_entries(mh,"magic");
+	magic_identify_file (mh, request_buffer);
+	sprintf(request_buffer, OK_MSG, mime_type);
+
 	//Send an OK
-	if (write(*socket_fd, OK_MSG, strlen(OK_MSG)) < 1) {
+	if (write(*socket_fd, request_buffer, strlen(request_buffer)) < 1) {
 		fprintf(stderr, "Unable to write OK message to socket\n");
 		goto cleanup;
 	}
 
 	//Send the file
 	while ((size = read(content_fd, request_buffer, BUFFER_SIZE)) > 0) {
-		printf("Read %d bytes\n",size);
 		result = write(*socket_fd, request_buffer, size);
-		printf("Wrote %d bytes\n", result);
 		if (result < size) {
 			fprintf(stderr, "Error writing file to socket\n");
 			goto cleanup;
