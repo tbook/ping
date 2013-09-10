@@ -90,8 +90,10 @@ int main(int argc, char **argv) {
     mode = argv[2];
     int modelen = strlen(mode);
     if (modelen > 2) {
-      if (strncmp(mode, "www", 3))
+      if (strncmp(mode, "www", 3) == 0) {
+        printf("Starting in web mode\n");
         webMode = 1;
+      }
     }
   }
 

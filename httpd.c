@@ -28,7 +28,8 @@ int parse(char *buffer) {
 int send_error(int *socket_fd, int error_code) {
 	char *buf = malloc(strlen(ERROR_MSG) + 10);
 	sprintf(buf, ERROR_MSG, error_code, error_code);
-	write(*socket_fd, buf, strlen(buf));
+	if (write(*socket_fd, buf, strlen(buf)) < 1)
+		fprintf(stderr, "Unable to write error message to socket\n");
 	close(*socket_fd);
 	free(buf);
 	return 0;
@@ -39,6 +40,8 @@ int send_error(int *socket_fd, int error_code) {
  */
 int service_request(int *socket_fd) {
 	char *request_buffer;
+
+	printf("Servicing web request\n");
 
 	request_buffer = malloc(BUFFER_SIZE);
 	if (request_buffer == NULL) {
@@ -61,5 +64,6 @@ int service_request(int *socket_fd) {
 
 	free(request_buffer);
 
+	send_error(socket_fd, 400);
 	return -1;
 }
