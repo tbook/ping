@@ -17,11 +17,12 @@
 
 #define DEBUG 0
 
-#define ERROR_MSG "<html><head><title>Error %d</title></head> \
- <body> \
- <h1>Error %d</h1> \
- We were unable to complete your request. \
- </body> \
+#define ERROR_MSG "HTTP/1.1 %d %s\r\nContent-Type: text/html\r\n\
+\r\n<html><head><title>Error %d</title></head> \
+ <body>\
+ <h1>Error %d: %s</h1>\
+ <p>We were unable to complete your request.\
+ </body>\
  </html>"
 
 #define OK_MSG "HTTP/1.1 200 OK \r\nContent-Type: %s \r\n\r\n"
@@ -78,9 +79,9 @@ int parse(char *buffer) {
 /**
  * Sends an error to the client
  **/
-int send_error(int *socket_fd, int error_code) {
-	char *buf = malloc(strlen(ERROR_MSG) + 10);
-	sprintf(buf, ERROR_MSG, error_code, error_code);
+int send_error(int *socket_fd, int error_code, char *msg) {
+	char *buf = malloc(strlen(ERROR_MSG) + 2 * strlen(msg) + 3*3);
+	sprintf(buf, ERROR_MSG, error_code, msg, error_code, error_code, msg);
 	if (write(*socket_fd, buf, strlen(buf)) < 1)
 		fprintf(stderr, "Unable to write error message to socket\n");
 	close(*socket_fd);
@@ -108,25 +109,25 @@ int service_request(int *socket_fd) {
 
 	request_buffer = malloc(BUFFER_SIZE);
 	if (request_buffer == NULL) {
-		send_error(socket_fd, 500);
+		send_error(socket_fd, 500, "Internal Server Error");
 		free(request_buffer);
 		return -1;
 	}
 
 	if (read(*socket_fd, request_buffer, BUFFER_SIZE) == -1) {
-		send_error(socket_fd, 400);
+		send_error(socket_fd, 400, "Bad Request");
 		free(request_buffer);
 		return -1;
 	}
 
 	result = parse(request_buffer);
 	if (result == -1) {
-		send_error(socket_fd, 400);
+		send_error(socket_fd, 400, "Bad Request");
 		free(request_buffer);
 		return -1;
 	}
 	if (result == -2) {
-		send_error(socket_fd, 401);
+		send_error(socket_fd, 401, "Not Authorized");
 		free(request_buffer);
 		return -1;
 	}
@@ -137,7 +138,7 @@ int service_request(int *socket_fd) {
 	content_fd = open(request_buffer, O_RDONLY);
 
 	if (content_fd < 0) {
-		send_error(socket_fd, 404);
+		send_error(socket_fd, 404, "Not Found");
 		free(request_buffer);
 		return -1;	
 	}
