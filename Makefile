@@ -2,7 +2,7 @@ OBJS = httpd.o server_text.o
 LDLIBS = -lmagic
 
 CC = gcc
-CFLAGS = -g -Wall -O2 -Llibmagic
+CFLAGS = -g -Wall -O2
 MAKE = make
 
 CLIENT = client
@@ -14,7 +14,7 @@ $(CLIENT):
 	${CC} ${CFLAGS} client_text.c -o $(CLIENT)
 
 $(SERVER): $(OBJS) magic
-	${CC} ${CFLAGS} ${OBJS} ${LDLIBS} -o $(SERVER)
+	${CC} ${CFLAGS} ${OBJS} ${LDLIBS} -Llibmagic -o $(SERVER)
 
 magic:
 	$(MAKE) -C libmagic

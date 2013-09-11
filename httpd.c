@@ -127,7 +127,7 @@ int service_request(int *socket_fd) {
 		return -1;
 	}
 	if (result == -2) {
-		send_error(socket_fd, 401, "Not Authorized");
+		send_error(socket_fd, 400, "Bad Request");
 		free(request_buffer);
 		return -1;
 	}
