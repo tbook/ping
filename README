@@ -8,4 +8,14 @@ Description:
   Client_text.c:
   httpd.c:
 
+Sources:
+  Aside from the following sources, the code is the product of the group
+  members.
+
+  The client_text.c and server_text.c programs are based on the supplied
+    examples for COMP 429
+
+  The libmagic mime type library was produced by Tim Robbins
+
 Testing:
+
