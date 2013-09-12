@@ -14,6 +14,10 @@
 #define SIZE_WIDTH  2
 #define TIME_WIDTH1 4
 #define TIME_WIDTH2 4
+#define MSG_MIN     10
+#define MSG_MAX     65535
+#define NUM_MIN     1
+#define NUM_MAX     10000
 #define EXTRA_WIDTH (SIZE_WIDTH + TIME_WIDTH1 + TIME_WIDTH2)
 #define DATA_SIZE (msg_size - EXTRA_WIDTH)
 
@@ -59,10 +63,25 @@ int main(int argc, char** argv) {
 
   /* server port number */
   unsigned short server_port = atoi (argv[2]);
+  
+  unsigned short msg_size;
+  unsigned short num_messages;
 
-  unsigned short msg_size = atoi (argv[3]);
+  long ms = atol (argv[3]);
+  long mn = atol (argv[4]);
 
-  unsigned short num_messages = atoi (argv[4]);
+  /* check input numbers */
+  if (ms < MSG_MIN || 
+      ms > MSG_MAX || 
+      mn < NUM_MIN || 
+      mn > NUM_MAX) {
+     perror("\nError: inappropriate message size or number.\n");
+     PRINT_OPTS();
+     abort();
+  } else {
+    msg_size = (unsigned short) ms;
+    num_messages = (unsigned short) mn;
+  }
 
 #ifdef DEBUG
   printf("msg_size is %d\n"
@@ -177,3 +196,4 @@ int main(int argc, char** argv) {
 
   return 0;
 }
+
