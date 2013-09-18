@@ -12,6 +12,7 @@
 
 #define SIZE_WIDTH 2
 #define TIME_WIDTH 8
+#define BUF_LEN 2<<16 // though the max for unsigned short is 2<<16-1, 2<<16 is good enough.
 
 /**************************************************/
 /* a few simple linked list functions             */
@@ -28,6 +29,9 @@ struct node {
      all the information regarding this socket.
      e.g. what data needs to be sent next */
   struct node *next;
+  char* buffer;
+  int n_bytes; // number of bytes sent or received. pending_data is used for marking which case it is. 
+  int msg_size;
 };
 
 /* remove the data structure associated with a connected socket
@@ -42,6 +46,7 @@ void dump(struct node *head, int socket) {
       /* remove */
       temp = current->next;
       current->next = temp->next;
+      free(temp->buffer); //free the buffer allocated for this node.
       free(temp); /* don't forget to free memory */
       return;
     } else {
@@ -59,6 +64,9 @@ void add(struct node *head, int socket, struct sockaddr_in addr) {
   new_node->client_addr = addr;
   new_node->pending_data = 0;
   new_node->next = head->next;
+  new_node->buffer = (char*)malloc(sizeof(char)*BUF_LEN);
+  new_node->n_bytes = 0;
+  new_node->msg_size = 0;
   head->next = new_node;
 }
 
@@ -127,12 +135,6 @@ int main(int argc, char **argv) {
   /* linked list for keeping track of connected sockets */
   struct node head;
   struct node *current, *next;
-
-  /* a buffer to read data */
-  char *buf;
-  int BUF_LEN = 1000;
-
-  buf = (char *)malloc(BUF_LEN);
 
   /* initialize dummy head node of linked list */
   head.socket = -1;
@@ -220,11 +222,11 @@ int main(int argc, char **argv) {
       if (FD_ISSET(sock, &read_set)) /* check the server socket */{
         /* there is an incoming connection, try to accept it */
         new_sock = accept (sock, (struct sockaddr *) &addr, &addr_len);
-	      
+              
         if (new_sock < 0){
-	         perror ("error accepting connection");
-	         abort ();
-	      }
+                 perror ("error accepting connection");
+                 abort ();
+              }
 
         if (webMode) {
           service_request(&new_sock);
@@ -237,10 +239,14 @@ int main(int argc, char **argv) {
            stuck when trying to send data to a socket that
            has too much data to send already.
          */
+        /* send and recv will return immediately if the socket is not ready.
+         * This is quote very important.
+         * If the socket is not ready, we need to mark receive or send in the queue.
+         */
         if (fcntl (new_sock, F_SETFL, O_NONBLOCK) < 0){
-	  perror ("making socket non-blocking");
-	  abort ();
-	}
+          perror ("making socket non-blocking");
+          abort ();
+        }
   
         /* the connection is made, everything is ready */
         /* let's see who's connecting to us */
@@ -257,160 +263,117 @@ int main(int argc, char **argv) {
       for (current = head.next; current; current = next) {
         next = current->next;
 
-	    /* see if we can now do some previously unsuccessful writes */
+            /* see if we can now do some previously unsuccessful writes */
         if (FD_ISSET(current->socket, &write_set)) {
-	      /* the socket is now ready to take more data */
-	      /* the socket data structure should have information
+              /* the socket is now ready to take more data */
+              /* the socket data structure should have information
                  describing what data is supposed to be sent next.
-	         but here for simplicity, let's say we are just
+                 but here for simplicity, let's say we are just
                  sending whatever is in the buffer buf
                */
-          count = send(current->socket, buf, BUF_LEN, MSG_DONTWAIT);
+          /*the server knows the msg_size and the number bytes sent.*/
+          count = send(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
           if (count < 0) {
-            if (errno == EAGAIN) {
-              /* we are trying to dump too much data down the socket,
-                 it cannot take more for the time being 
-                 will have to go back to select and wait til select
-                 tells us the socket is ready for writing
-               */
-            }
-            else {
-              /* something else is wrong */
-            }
+            switch(errno){
+            /* we are trying to dump too much data down the socket,
+               it cannot take more for the time being 
+               will have to go back to select and wait til select
+               tells us the socket is ready for writing
+            */
+            case EAGAIN:
+              break;
+            default:
+              perror("not an good errno. closing the connection...");
+              /* connection is closed, clean up 
+                 assuming a client is either waiting to write or waiting to read.
+                 can't be both*/
+              close(current->socket);
+              dump(&head, current->socket);
+              break;
+            }//switch(errno)
+          }//if (count < 0)
+          else{ // at least sent something, update the number bytes sent
+            current->n_bytes += count;
           }
+
+
           /* note that it is important to check count for exactly
              how many bytes were actually sent even when there are
              no error. send() may send only a portion of the buffer
              to be sent.
            */
-        }
+          if(current->n_bytes == current->msg_size){
+            current->pending_data = 0;// stop sending the current message to this socket in the next iteration.
+          }
+#ifdef DEBUG
+          else if(current->n_bytes > current->msg_size){
+            current->pending_data = 0;
+            printf("sent more bytes than needed, or error in tracking the number of bytes sent.\n");
+          }
+#endif
+          else{
+            current->pending_data = 1;
+          }
 
+        } //if (FD_ISSET(current->socket, &write_set)
+
+        /*if there is data to receive from the client*/
         if (FD_ISSET(current->socket, &read_set)) {
 
-          /* we have data from a client */	      
-          count = recv(current->socket, buf, BUF_LEN, 0);
+          /* we have data from a client */
+          if(current->msg_size == 0){
+            count = recv(current->socket, current->buffer + current->n_bytes, BUF_LEN - current->n_bytes, MSG_DONTWAIT);
+          }
+          else{
+            count = recv(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
+          }
 
-          if (count <= 0) {
-            /* something is wrong */
-            if (count == 0) {
+          if (count == 0) {
               printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
-            }
-            else {
-              perror("error receiving from a client, closed down the connecion");
-            }
-
-            /* connection is closed, clean up */
-            close(current->socket);
-            dump(&head, current->socket);
-          } 
-          else {// count > 0
-            /* we got count bytes of data from the client */
-            /* in general, the amount of data received in a recv()
-               call may not be a complete application message. it
-               is important to check the data received against
-               the message format you expect. if only a part of a
-               message has been received, you must wait and
-               receive the rest later when more data is available
-               to be read */
-
-            /* for this simple example, we expect the message to
-               be a string, and the last byte of the string to be 0,
-               i.e. end of string */
-
-            char* tmp_buf;
-            if (count == 1){
-              /*shift the pointer by 1 byte*/
-              tmp_buf = buf + 1;
-
-              count += recv(current->socket, tmp_buf, BUF_LEN - 1, 0);
-              if (count == 1) {
-                printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
-              }
-              else if(count < 1){
-                perror("receiving continues: error receiving from a client");
-              }
-              /*close and clean up*/
+              /* connection is closed, clean up */
               close(current->socket);
               dump(&head, current->socket);
-
-              /*skip the rest part of this iteration*/
-              continue;
-            }
-
-            /*now the size is stored in the first two bytes of buf*/
-            unsigned short msg_size = ntohs(*(unsigned short *)buf);
-#ifdef DEBUG
-            printf("size known :%d.\n", msg_size);
-#endif //DEBUG
-            int connection_closed = 0;
-
-            /*now we know the size of a message, augment the buf if needed.*/
-            if (BUF_LEN < msg_size){
-#ifdef DEBUG
-                printf("new buf\n");
-#endif //DEBUG
-                char* new_buf = (char*)malloc(msg_size);
-                memcpy(new_buf, buf, count);
-                free(buf);
-                buf = new_buf;
-                BUF_LEN = msg_size;
-            }
-
-            /*incomplete, continue to receive.*/
-            int remain_len = msg_size - count;
-                tmp_buf    = buf + count;
-            int buf_end    = (int)buf + msg_size;
-#ifdef DEBUG
-            printf("msg_size is %d.\n", msg_size);
-#endif //DEBUG
-            while(tmp_buf < buf_end){
-              count = recv(current->socket, tmp_buf, remain_len, 0);
-              if(count <= 0){
-                if(count == 0){
-                  printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
-                }
-                else if(count < 0){
-                  perror("error receiving from the client");
-                }
-                connection_closed = 1;
-                close(current->socket);
-                dump(&head, current->socket);
-                break;
+          }
+          else if (count < 0){
+            switch(errno){
+            /*do nothign, wait for the next iteration to deal with this message receiving.
+              Again, assuming that it has to be either read or write.
+             */
+            case EAGAIN:
+              break;
+            default:
+              perror("error receiving from a client, closed down the connecion");
+              /* connection is closed, clean up */
+              close(current->socket);
+              dump(&head, current->socket);
+              break;
+            }//switch
+          }// if count <= 0
+          else {// count > 0
+            /* we got count bytes of data from the client */
+            current->n_bytes += count;
+            if(current->n_bytes > 2){
+              /*first time got more that 2 bytes, now the server knows the message size*/
+              if(current->msg_size == 0){
+                current->msg_size = ntohs(*(unsigned short *)current->buffer);
               }
-              tmp_buf    +=  count;
-              remain_len += -count;
-            }// continue to receive
 
-            if(connection_closed == 1)
-                continue;
-
+              /*The server must have known the msg_size at this point.*/
+              if(current->n_bytes == current->msg_size){ // prepare for sending the pong message
+                current->pending_data = 1;
+                current->n_bytes = 0;
+              }//else do nothing, not ready to send to this socket yet.
 #ifdef DEBUG
-            printf("sending pong message.\n");
+              else if(current->n_bytes > current->msg_size){
+                current->pending_data = 1;
+                current->n_bytes = 0;
+                printf("received more data than the amount client has sent, or error in tracking number of bytes received.\n");
+              }
 #endif
-            /*now we got all the bytes, send back a pong message*/
-            tmp_buf    = buf;
-            remain_len = msg_size;
-            while(tmp_buf < buf_end){ // still incomplete
-              count = send(current->socket, tmp_buf, remain_len, MSG_DONTWAIT);
-              if(count <= 0){
-                if(count == 0){
-                  printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
-                }
-                else if(count < 0){
-                  perror("error sending to the client");
-                }
-                close(current->socket);
-                dump(&head, current->socket);
-                break;
-              }
-              tmp_buf    += count;
-              remain_len -= count;
-            }// send back pong message
-              
+            }//else do nothing
           } // we at least get something.
-        }
-      }
-    }
-  }
-  free(buf);
+        } // if FD_ISSET read
+      }//iterate through sockets
+    }// if sellect
+  }//while
 }
