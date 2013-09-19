@@ -1,429 +1,250 @@
-#include <errno.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <fcntl.h>
-#include "httpd.h"
-#include <signal.h>
+#include <netdb.h>
+#include <time.h>
+#include <sys/time.h>
+#include <errno.h>
 
-#define SIZE_WIDTH 2
-#define TIME_WIDTH 8
-#define BUF_LEN (2<<16) // though the max for unsigned short is 2<<16-1, 2<<16 is good enough.
+#define NUM_OPT     4
+#define SIZE_WIDTH  2
+#define TIME_WIDTH1 4
+#define TIME_WIDTH2 4
+#define MSG_MIN     10
+#define MSG_MAX     65535
+#define NUM_MIN     1
+#define NUM_MAX     10000
+#define EXTRA_WIDTH (SIZE_WIDTH + TIME_WIDTH1 + TIME_WIDTH2)
+#define DATA_SIZE (msg_size - EXTRA_WIDTH)
 
-/**************************************************/
-/* a few simple linked list functions             */
-/**************************************************/
+#define PRINT_OPTS() do{\
+    perror("Expected format of commandline:\n"\
+           "./client hostname port size count.\n\n"\
+           "hostname: The domain name or the ip address of the host where the server is running.\n"\
+           "port    : The port on which the server is running, in the range of [18000,18200].\n"\
+           "size    : The size in bytes of each message to send, in the range of [10, 65,535].\n"\
+           "count   : The number of messages exchanges to perform, in the range of [1, 10,000].\n"\
+          );\
+}while(0)
 
 
-/* A linked list node data structure to maintain application
-   information related to a connected socket */
-struct node {
-  int socket;
-  struct sockaddr_in client_addr;
-  int pending_data; /* flag to indicate whether there is more data to send */
-  /* you will need to introduce some variables here to record
-     all the information regarding this socket.
-     e.g. what data needs to be sent next */
-  struct node *next;
-  char* buffer;
-  int n_bytes; // number of bytes sent or received. pending_data is used for marking which case it is. 
-  int msg_size;
-};
+/* simple client, takes two parameters, the server domain name,
+   and the server port number */
 
-struct node* root;
+int main(int argc, char** argv) {
+  long total_sec = 0;
+  long total_usec = 0;
 
-/* remove the data structure associated with a connected socket
-   used when tearing down the connection */
-void dump(struct node *head, int socket) {
-  struct node *current, *temp;
+  /*used for time stamping the send and receives.*/
+  struct timeval time_stamp;
 
-  current = head;
+  if(argc != NUM_OPT + 1){
+    PRINT_OPTS();
+    abort();
+  }
+  /* our client socket */
+  int sock;
 
-  while (current->next) {
-    if (current->next->socket == socket) {
-      /* remove */
-      temp = current->next;
-      current->next = temp->next;
-      free(temp->buffer); //free the buffer allocated for this node.
-      free(temp); /* don't forget to free memory */
-      return;
-    } else {
-      current = current->next;
+  /* address structure for identifying the server */
+  struct sockaddr_in s_in;
+
+  /* convert server domain name to IP address */
+  struct hostent *host = gethostbyname(argv[1]);
+  if(!host){
+    perror("invalid host name.\n");
+    PRINT_OPTS();
+    abort();
+  }
+  unsigned int server_addr = *(unsigned int *) host->h_addr_list[0];
+
+  /* server port number */
+  unsigned short server_port = atoi (argv[2]);
+  
+  unsigned short msg_size;
+  unsigned short num_messages;
+
+  long ms = atol (argv[3]);
+  long mn = atol (argv[4]);
+
+  /* check input numbers */
+  if (ms < MSG_MIN || 
+      ms > MSG_MAX || 
+      mn < NUM_MIN || 
+      mn > NUM_MAX) {
+     perror("\nError: inappropriate message size or number.\n");
+     PRINT_OPTS();
+     abort();
+  } else {
+    msg_size = (unsigned short) ms;
+    num_messages = (unsigned short) mn;
+  }
+
+#ifdef DEBUG
+  printf("msg_size is %d\n"
+         "num_messages is %d\n", msg_size, num_messages);
+#endif //DEBUG
+
+  /* allocate a memory buffer in the heap */
+  /* putting a buffer on the stack like:
+
+         char buffer[500];
+
+     leaves the potential for
+     buffer overflow vulnerability */
+  char *msg_buffer = (char*) malloc(msg_size * sizeof(char));
+  if (!msg_buffer)
+    {
+      perror("failed to allocated buffer");
+      abort();
     }
-  }
-}
 
-/* create the data structure associated with a connected socket */
-void add(struct node *head, int socket, struct sockaddr_in addr) {
-  struct node *new_node;
-
-  new_node = (struct node *)malloc(sizeof(struct node));
-  new_node->socket = socket;
-  new_node->client_addr = addr;
-  new_node->pending_data = 0;
-  new_node->next = head->next;
-  new_node->buffer = (char*)malloc(sizeof(char)*BUF_LEN);
-  new_node->n_bytes = 0;
-  new_node->msg_size = 0;
-  head->next = new_node;
-}
-
-void free_resource()
-{
-  struct node* tmp;
-  while(root->next){
-    tmp = root->next;
-    root->next = tmp->next;
-    close(tmp->socket);
-    free(tmp->buffer);
-    free(tmp);
-  }
-}
-
-/*This signal hander will call the resource freer*/
-void exit_handler(int sig)
-{
-  free_resource();
-  printf("force close.\n");
-  exit(1);
-}
-
-
-/*****************************************/
-/* main program                          */
-/*****************************************/
-
-/* simple server, takes one parameter, the server port number */
-int main(int argc, char **argv) {
-
-  /*code for catching ctrl-c signal so that we can free all the memory we malloced*/
-   struct sigaction sigIntHandler;
-
-   sigIntHandler.sa_handler = exit_handler;
-   sigemptyset(&sigIntHandler.sa_mask);
-   sigIntHandler.sa_flags = 0;
-
-   sigaction(SIGINT, &sigIntHandler, NULL);
-
-  int server_port;
-  char *mode;
-  char webMode = 0; //0 = false; 1 = true
-
-  /*Parse Arguments*/
-  if ((argc < 2) || (argc > 4)) {
-    fprintf(stderr, "Syntax: %s port [mode] [root_directory]\n",argv[0]);
-    return -1;
-  }
-
-  if (sscanf(argv[1], "%d", &server_port) < 1) {
-    fprintf(stderr, "port should be numeric\n");
-    return -1;
-  }
-
-  if (argc > 2) {
-    mode = argv[2];
-    int modelen = strlen(mode);
-    if (modelen > 2) {
-      if (strncmp(mode, "www", 3) == 0) {
-        printf("Starting in web mode\n");
-        webMode = 1;
-      }
-    }
-  }
-
-  if (argc > 3) {
-    if (parse_root(argv[3]) < 0) {
-      fprintf(stderr, "Invalid server root\n");
-      return -1;
-    }
-  }
-
-  /* socket and option variables */
-  int sock, new_sock, max;
-  int optval = 1;
-
-  /* server socket address variables */
-  struct sockaddr_in sin, addr;
-
-  /* socket address variables for a connected client */
-  socklen_t addr_len = sizeof(struct sockaddr_in);
-
-  /* maximum number of pending connection requests */
-  int BACKLOG = 5;
-
-  /* variables for select */
-  fd_set read_set, write_set;
-  struct timeval time_out;
-  int select_retval;
-
-  /* number of bytes sent/received */
-  int count;
-
-  /* linked list for keeping track of connected sockets */
-  struct node head;
-  struct node *current, *next;
-  root = &head;
-
-  /* initialize dummy head node of linked list */
-  head.socket = -1;
-  head.next = 0;
-  head.buffer = NULL;
-
-  /* create a server socket to listen for TCP connection requests */
+  /* create a socket */
   if ((sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
     {
       perror ("opening TCP socket");
       abort ();
     }
-  
-  /* set option so we can reuse the port number quickly after a restart */
-  if (setsockopt (sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval)) <0)
-    {
-      perror ("setting TCP socket option");
-      abort ();
-    }
 
-  /* fill in the address of the server socket */
-  memset (&sin, 0, sizeof (sin));
-  sin.sin_family = AF_INET;
-  sin.sin_addr.s_addr = INADDR_ANY;
-  sin.sin_port = htons (server_port);
-  
-  /* bind server socket to the address */
-  if (bind(sock, (struct sockaddr *) &sin, sizeof (sin)) < 0)
+  /* fill in the server's address */
+  memset (&s_in, 0, sizeof (s_in));
+  s_in.sin_family = AF_INET;
+  s_in.sin_addr.s_addr = server_addr;
+  s_in.sin_port = htons(server_port);
+
+  /* connect to the server */
+  if (connect(sock, (struct sockaddr *) &s_in, sizeof (s_in)) < 0)
     {
-      perror("binding socket to address");
+      perror("connect to server failed");
       abort();
     }
 
-  /* put the server socket in listen mode */
-  if (listen (sock, BACKLOG) < 0)
-    {
-      perror ("listen on socket failed");
-      abort();
-    }
+#ifdef TEST_TEXT
+  /*make the message*/
+  /*read message*/
+  /*There should be randome data in the buffer now.*/
+  char* data_buffer = msg_buffer + EXTRA_WIDTH;
+  printf("Please type in message:\n");
+  fgets(data_buffer, data_size, stdin);
 
-  /* now we keep waiting for incoming connections,
-     check for incoming data to receive,
-     check for ready socket to send more data */
-  while (1){
+  /*terminate the message with '0'*/
+  data_buffer[data_size-1] = 0;
+  data_buffer[strlen(data_buffer)-1] = 0;
+  data_size = strlen(data_buffer);
+  msg_size = data_size + EXTRA_WIDTH;
 
-    /* set up the file descriptor bit map that select should be watching */
-    FD_ZERO (&read_set); /* clear everything */
-    FD_ZERO (&write_set); /* clear everything */
+  printf("string length is %d.\n", strlen(data_buffer));
+  printf("This is the message the client reads:\n%s.\n", data_buffer);
+#endif// TEST_TEXT
 
-    FD_SET (sock, &read_set); /* put the listening socket in */
-    max = sock; /* initialize max */
+  *(unsigned short*)msg_buffer = htons(msg_size);
+  int count = 0;
+  while (count < num_messages) {
 
-    /* put connected sockets into the read and write sets to monitor them */
-    for (current = head.next; current; current = current->next) {
-      FD_SET(current->socket, &read_set);
+#ifdef DEBUG
+    printf("number of iteration = %d.\n", count);
+#endif
 
-      if (current->pending_data) {
-        /* there is data pending to be sent, monitor the socket
-           in the write set so we know when it is ready to take more
-           data */
-        FD_SET(current->socket, &write_set);
-      }
+    /*get time before send*/
+    gettimeofday(&time_stamp, NULL);
+    
+    /*setup send message, message size and the data_buffer has been set*/
+    *(unsigned int*)(msg_buffer + SIZE_WIDTH) = ntohl(time_stamp.tv_sec);
+    *(unsigned int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1) = ntohl(time_stamp.tv_usec);
 
-      if (current->socket > max) {
-        /* update max if necessary */
-        max = current->socket;
-      }
-    }
+    /*send the ping message*/
+    int buffer_end = msg_buffer + msg_size;
+    int remain_len = msg_size;
+    char* buffer = msg_buffer;
+    int tmp_count;
+    while(buffer < buffer_end){
 
-    time_out.tv_usec = 100000; /* 1-tenth of a second timeout */
-    time_out.tv_sec = 0;
+#ifdef DEBUG
+      printf("%d bytes remaining.\n", remain_len);
+#endif
 
-    /* invoke select, make sure to pass max+1 !!! */
-    select_retval = select(max+1, &read_set, &write_set, NULL, &time_out);
-    if (select_retval < 0){
-      perror ("select failed");
-      abort ();
-    }
+      tmp_count = send(sock, buffer, remain_len, 0);
 
-    if (select_retval == 0){
-      /* no descriptor ready, timeout happened */
-      continue;
-    }
-      
-    if (select_retval > 0) /* at least one file descriptor is ready */{
-      if (FD_ISSET(sock, &read_set)) /* check the server socket */{
-        /* there is an incoming connection, try to accept it */
-        new_sock = accept (sock, (struct sockaddr *) &addr, &addr_len);
-              
-        if (new_sock < 0){
-                 perror ("error accepting connection");
-                 abort ();
-              }
+#ifdef DEBUG
+      printf("send count is %d.\n", tmp_count);
+#endif
 
-        if (webMode) {
-          service_request(&new_sock);
+      if(tmp_count < 0){
+        if(errno == EAGAIN)
+          continue;
+        else if (errno == EWOULDBLOCK)
+          continue;
+        else{
+          sleep(0.0001);
           continue;
         }
-
-        /* make the socket non-blocking so send and recv will
-           return immediately if the socket is not ready.
-           this is important to ensure the server does not get
-           stuck when trying to send data to a socket that
-           has too much data to send already.
-         */
-        /* send and recv will return immediately if the socket is not ready.
-         * This is quote very important.
-         * If the socket is not ready, we need to mark receive or send in the queue.
-         */
-        if (fcntl (new_sock, F_SETFL, O_NONBLOCK) < 0){
-          perror ("making socket non-blocking");
-          abort ();
-        }
-  
-        /* the connection is made, everything is ready */
-        /* let's see who's connecting to us */
-        printf("Accepted connection. Client IP address is: %s\n",
-              inet_ntoa(addr.sin_addr));
-
-        /* remember this client connection in our linked list */
-        add(&head, new_sock, addr);
+        perror("error sending to server...\n");
+        free(msg_buffer);
+        abort();
       }
+      else if(tmp_count == 0){
+        continue;
+        /*what if the client receive returns 0?*/
+        printf("send returns 0.\n");
+        free(msg_buffer);
+        abort();
+      }
+      buffer     +=  tmp_count;
+      remain_len += -tmp_count;
+    }
 
-      /* check other connected sockets, see if there is
-         anything to read or some socket is ready to send
-         more pending data */
-      for (current = head.next; current; current = next) {
+    /*receive the pong message*/
+    buffer = msg_buffer;
+    remain_len = buffer_end - (int)buffer;
+    while(buffer < buffer_end){
+
 #ifdef DEBUG
-        printf("checking write.\n");
-#endif
-        next = current->next;
-
-            /* see if we can now do some previously unsuccessful writes */
-        if (FD_ISSET(current->socket, &write_set)) {
-              /* the socket is now ready to take more data */
-              /* the socket data structure should have information
-                 describing what data is supposed to be sent next.
-                 but here for simplicity, let's say we are just
-                 sending whatever is in the buffer buf
-               */
-          /*the server knows the msg_size and the number bytes sent.*/
-          count = send(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
-#ifdef DEBUG
-          printf("send count is %d.\n", count);
-#endif
-          if (count < 0) {
-            switch(errno){
-            /* we are trying to dump too much data down the socket,
-               it cannot take more for the time being 
-               will have to go back to select and wait til select
-               tells us the socket is ready for writing
-            */
-            case EAGAIN:
-              printf("socket not ready for send.\n");
-              break;
-            default:
-              perror("not an good errno. closing the connection...");
-              /* connection is closed, clean up 
-                 assuming a client is either waiting to write or waiting to read.
-                 can't be both*/
-              close(current->socket);
-              dump(&head, current->socket);
-              break;
-            }//switch(errno)
-          }//if (count < 0)
-          else{ // at least sent something, update the number bytes sent
-            current->n_bytes += count;
-          }
-
-
-          /* note that it is important to check count for exactly
-             how many bytes were actually sent even when there are
-             no error. send() may send only a portion of the buffer
-             to be sent.
-           */
-          if(current->n_bytes == current->msg_size){
-            current->pending_data = 0;// stop sending the current message to this socket in the next iteration.
-            current->n_bytes = 0;
-          }
-#ifdef DEBUG
-          else if(current->n_bytes > current->msg_size){
-            current->pending_data = 0;
-            current->n_bytes = 0;
-            printf("sent more bytes than needed, or error in tracking the number of bytes sent.\n");
-          }
-#endif
-          else{
-            current->pending_data = 1;
-          }
-
-        } //if (FD_ISSET(current->socket, &write_set)
-
-        /*if there is data to receive from the client*/
-        if (FD_ISSET(current->socket, &read_set)) {
-#ifdef DEBUG
-          printf("checking read.\n");
-          /* we have data from a client */
-          printf("number of bytes is %d.\n", current->n_bytes);
-#endif
-          if(current->msg_size == 0){
-            count = recv(current->socket, current->buffer + current->n_bytes, BUF_LEN - current->n_bytes, MSG_DONTWAIT);
-          }
-          else{
-            count = recv(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
-          }
-#ifdef DEBUG
-          printf("recv count is %d.\n", count);
+      printf("%d bytes remaining.\n", remain_len);
 #endif
 
-          if (count == 0) {
-              printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
-              /* connection is closed, clean up */
-              close(current->socket);
-              dump(&head, current->socket);
-          }
-          else if (count < 0){
-            switch(errno){
-            /*do nothign, wait for the next iteration to deal with this message receiving.
-              Again, assuming that it has to be either read or write.
-             */
-            case EAGAIN:
-              printf("socket not ready for recv.\n");
-              break;
-            default:
-              perror("error receiving from a client, closed down the connecion");
-              /* connection is closed, clean up */
-              close(current->socket);
-              dump(&head, current->socket);
-              break;
-            }//switch
-          }// if count <= 0
-          else {// count > 0
-            /* we got count bytes of data from the client */
-            current->n_bytes += count;
-            if(current->n_bytes > 2){
-              /*first time got more that 2 bytes, now the server knows the message size*/
-              if(current->msg_size == 0){
-                current->msg_size = ntohs(*(unsigned short *)current->buffer);
-              }
+      tmp_count = recv(sock, buffer, remain_len, 0);
 
-              /*The server must have known the msg_size at this point.*/
-              if(current->n_bytes == current->msg_size){ // prepare for sending the pong message
-                current->pending_data = 1;
-                current->n_bytes = 0;
-              }//else do nothing, not ready to send to this socket yet.
 #ifdef DEBUG
-              else if(current->n_bytes > current->msg_size){
-                current->pending_data = 1;
-                current->n_bytes = 0;
-                printf("received more data than the amount client has sent, or error in tracking number of bytes received.\n");
-              }
+      printf("recv count is %d.\n", tmp_count);
 #endif
-            }//else do nothing
-          } // we at least get something.
-        } // if FD_ISSET read
-      }//iterate through sockets
-    }// if sellect
-  }//while
+
+      if(tmp_count < 0){
+
+#ifdef DEBUG
+        printf("some error in receiving. try again.\n");
+        continue;
+#endif
+
+        if(errno == EAGAIN)
+          continue;
+        else if (errno == EWOULDBLOCK)
+          continue;
+        printf("error code: %d.\n", errno);
+        perror("error receiving from server...");
+        free(msg_buffer);
+        abort();
+      }
+      else if(tmp_count == 0){
+        perror("connection closed...");
+        free(msg_buffer);
+        abort();
+        /*what if the client receive returns 0?*/
+      }
+      buffer     +=  tmp_count;
+      remain_len += -tmp_count;
+    }
+    
+    gettimeofday(&time_stamp, NULL);
+    total_sec  += time_stamp.tv_sec  - ntohl(*(unsigned int*)(msg_buffer + SIZE_WIDTH));
+    total_usec += time_stamp.tv_usec - ntohl(*(unsigned int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1));
+    count++;
+  }
+
+  printf("The average latency is %.3fms.\n", (total_sec * 1000 + total_usec/1000.0)/num_messages);
+  free(msg_buffer);
+  return 0;
 }
