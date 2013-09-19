@@ -9,10 +9,11 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include "httpd.h"
+#include <signal.h>
 
 #define SIZE_WIDTH 2
 #define TIME_WIDTH 8
-#define BUF_LEN 2<<16 // though the max for unsigned short is 2<<16-1, 2<<16 is good enough.
+#define BUF_LEN (2<<16) // though the max for unsigned short is 2<<16-1, 2<<16 is good enough.
 
 /**************************************************/
 /* a few simple linked list functions             */
@@ -33,6 +34,8 @@ struct node {
   int n_bytes; // number of bytes sent or received. pending_data is used for marking which case it is. 
   int msg_size;
 };
+
+struct node* root;
 
 /* remove the data structure associated with a connected socket
    used when tearing down the connection */
@@ -70,6 +73,26 @@ void add(struct node *head, int socket, struct sockaddr_in addr) {
   head->next = new_node;
 }
 
+void free_resource()
+{
+  struct node* tmp;
+  while(root->next){
+    tmp = root->next;
+    root->next = tmp->next;
+    close(tmp->socket);
+    free(tmp->buffer);
+    free(tmp);
+  }
+}
+
+/*This signal hander will call the resource freer*/
+void exit_handler(int sig)
+{
+  free_resource();
+  printf("force close.\n");
+  exit(1);
+}
+
 
 /*****************************************/
 /* main program                          */
@@ -77,6 +100,15 @@ void add(struct node *head, int socket, struct sockaddr_in addr) {
 
 /* simple server, takes one parameter, the server port number */
 int main(int argc, char **argv) {
+
+  /*code for catching ctrl-c signal so that we can free all the memory we malloced*/
+   struct sigaction sigIntHandler;
+
+   sigIntHandler.sa_handler = exit_handler;
+   sigemptyset(&sigIntHandler.sa_mask);
+   sigIntHandler.sa_flags = 0;
+
+   sigaction(SIGINT, &sigIntHandler, NULL);
 
   int server_port;
   char *mode;
@@ -135,10 +167,12 @@ int main(int argc, char **argv) {
   /* linked list for keeping track of connected sockets */
   struct node head;
   struct node *current, *next;
+  root = &head;
 
   /* initialize dummy head node of linked list */
   head.socket = -1;
   head.next = 0;
+  head.buffer = NULL;
 
   /* create a server socket to listen for TCP connection requests */
   if ((sock = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
@@ -261,6 +295,9 @@ int main(int argc, char **argv) {
          anything to read or some socket is ready to send
          more pending data */
       for (current = head.next; current; current = next) {
+#ifdef DEBUG
+        printf("checking write.\n");
+#endif
         next = current->next;
 
             /* see if we can now do some previously unsuccessful writes */
@@ -273,6 +310,9 @@ int main(int argc, char **argv) {
                */
           /*the server knows the msg_size and the number bytes sent.*/
           count = send(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
+#ifdef DEBUG
+          printf("send count is %d.\n", count);
+#endif
           if (count < 0) {
             switch(errno){
             /* we are trying to dump too much data down the socket,
@@ -281,6 +321,7 @@ int main(int argc, char **argv) {
                tells us the socket is ready for writing
             */
             case EAGAIN:
+              printf("socket not ready for send.\n");
               break;
             default:
               perror("not an good errno. closing the connection...");
@@ -304,10 +345,12 @@ int main(int argc, char **argv) {
            */
           if(current->n_bytes == current->msg_size){
             current->pending_data = 0;// stop sending the current message to this socket in the next iteration.
+            current->n_bytes = 0;
           }
 #ifdef DEBUG
           else if(current->n_bytes > current->msg_size){
             current->pending_data = 0;
+            current->n_bytes = 0;
             printf("sent more bytes than needed, or error in tracking the number of bytes sent.\n");
           }
 #endif
@@ -319,14 +362,20 @@ int main(int argc, char **argv) {
 
         /*if there is data to receive from the client*/
         if (FD_ISSET(current->socket, &read_set)) {
-
+#ifdef DEBUG
+          printf("checking read.\n");
           /* we have data from a client */
+          printf("number of bytes is %d.\n", current->n_bytes);
+#endif
           if(current->msg_size == 0){
             count = recv(current->socket, current->buffer + current->n_bytes, BUF_LEN - current->n_bytes, MSG_DONTWAIT);
           }
           else{
             count = recv(current->socket, current->buffer + current->n_bytes, current->msg_size - current->n_bytes, MSG_DONTWAIT);
           }
+#ifdef DEBUG
+          printf("recv count is %d.\n", count);
+#endif
 
           if (count == 0) {
               printf("Client closed connection. Client IP address is: %s\n", inet_ntoa(current->client_addr.sin_addr));
@@ -340,6 +389,7 @@ int main(int argc, char **argv) {
               Again, assuming that it has to be either read or write.
              */
             case EAGAIN:
+              printf("socket not ready for recv.\n");
               break;
             default:
               perror("error receiving from a client, closed down the connecion");
