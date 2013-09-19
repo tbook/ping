@@ -22,7 +22,7 @@
 #define DATA_SIZE (msg_size - EXTRA_WIDTH)
 
 #define PRINT_OPTS() do{\
-    perror("\nUsage: ./client hostname port size count.\n\n"\
+    fprintf(stderr,"\nUsage: ./client hostname port size count.\n\n"\
            "hostname:\tThe domain name or the ip address of the host where\n\t\tthe server is running.\n"\
            "port    :\tThe port on which the server is running, in the range\n\t\tof [18000,18200].\n"\
            "size    :\tThe size in bytes of each message to send, in the range\n\t\tof [10, 65,535].\n"\
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   if(!host){
     perror("invalid host name.\n");
     PRINT_OPTS();
-    abort();
+    return -1;
   }
   unsigned int server_addr = *(unsigned int *) host->h_addr_list[0];
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
       mn > NUM_MAX) {
      perror("\nError: inappropriate message size or number.\n");
      PRINT_OPTS();
-     abort();
+     return -1;
   } else {
     msg_size = (unsigned short) ms;
     num_messages = (unsigned short) mn;
