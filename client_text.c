@@ -22,12 +22,11 @@
 #define DATA_SIZE (msg_size - EXTRA_WIDTH)
 
 #define PRINT_OPTS() do{\
-    perror("Expected format of commandline:\n"\
-           "./client hostname port size count.\n\n"\
-           "hostname: The domain name or the ip address of the host where the server is running.\n"\
-           "port    : The port on which the server is running, in the range of [18000,18200].\n"\
-           "size    : The size in bytes of each message to send, in the range of [10, 65,535].\n"\
-           "count   : The number of messages exchanges to perform, in the range of [1, 10,000].\n"\
+    perror("\nUsage: ./client hostname port size count.\n\n"\
+           "hostname:\tThe domain name or the ip address of the host where\n\t\tthe server is running.\n"\
+           "port    :\tThe port on which the server is running, in the range\n\t\tof [18000,18200].\n"\
+           "size    :\tThe size in bytes of each message to send, in the range\n\t\tof [10, 65,535].\n"\
+           "count   :\tThe number of messages exchanges to perform, in the\n\t\trange of [1, 10,000].\n"\
           );\
 }while(0)
 
@@ -44,7 +43,7 @@ int main(int argc, char** argv) {
 
   if(argc != NUM_OPT + 1){
     PRINT_OPTS();
-    abort();
+    return -1;
   }
   /* our client socket */
   int sock;
@@ -151,7 +150,7 @@ int main(int argc, char** argv) {
     *(unsigned int*)(msg_buffer + SIZE_WIDTH + TIME_WIDTH1) = ntohl(time_stamp.tv_usec);
 
     /*send the ping message*/
-    int buffer_end = msg_buffer + msg_size;
+    char *buffer_end = msg_buffer + msg_size;
     int remain_len = msg_size;
     char* buffer = msg_buffer;
     int tmp_count;
@@ -172,7 +171,7 @@ int main(int argc, char** argv) {
 
     /*receive the pong message*/
     buffer = msg_buffer;
-    remain_len = buffer_end - (int)buffer;
+    remain_len = buffer_end - buffer;
     while(buffer < buffer_end){
       tmp_count = recv(sock, buffer, remain_len, 0);
       if(tmp_count < 0){

@@ -10,7 +10,7 @@ SERVER = server
 
 all: $(CLIENT) $(SERVER)
 
-$(CLIENT):
+$(CLIENT): client_text.c
 	${CC} ${CFLAGS} client_text.c -o $(CLIENT)
 
 $(SERVER): $(OBJS) magic
