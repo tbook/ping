@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include "httpd.h"
 #include <signal.h>
+#include <netdb.h>
+#include <ifaddrs.h>
 
 #define SIZE_WIDTH 2
 #define TIME_WIDTH 8
@@ -93,6 +95,35 @@ void exit_handler(int sig)
   exit(1);
 }
 
+/*so that we'll know on which clear server is this server running*/
+void get_local_ip()
+{
+  struct ifaddrs *ifaddr, *ifa;
+  int family, s;
+  char host[NI_MAXHOST];
+
+  if (getifaddrs(&ifaddr) == -1) {
+    perror("getifaddrs");
+    exit(EXIT_FAILURE);
+  }
+
+  for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+    family = ifa->ifa_addr->sa_family;
+
+    if (family == AF_INET) {
+      s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
+                                               host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+      if (s != 0) {
+        printf("getnameinfo() failed: %s\n", gai_strerror(s));
+        exit(EXIT_FAILURE);
+      }
+
+      if(!strcmp(ifa->ifa_name, "bond0"))
+        printf("local server is %s.\n", host);
+    }
+  }
+}
+
 
 /*****************************************/
 /* main program                          */
@@ -100,6 +131,8 @@ void exit_handler(int sig)
 
 /* simple server, takes one parameter, the server port number */
 int main(int argc, char **argv) {
+
+  get_local_ip();
 
   /*code for catching ctrl-c signal so that we can free all the memory we malloced*/
    struct sigaction sigIntHandler;
