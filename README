@@ -1,8 +1,12 @@
 Members:
 Book, Theodore
-Lei, Tang
+Tang, Lei
 Li, Lung
+<<<<<<< HEAD
 Xiaoran, Xu
+=======
+Xu, Xiaoran
+>>>>>>> c38d155f454b5c3fe65ac0befe530891aa4f3b5f
 
 Description:
   Server_text.c:  server code, can work in two modes: ping-pong and web server mode
