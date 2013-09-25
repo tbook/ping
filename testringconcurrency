@@ -1,0 +1,5 @@
+#! /bin/bash
+
+echo ""
+echo "ping-pong mode concurrency test.... "
+./client 128.42.208.5 18115 65535 10000

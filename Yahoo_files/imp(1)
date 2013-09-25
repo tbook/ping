@@ -1,0 +1,23 @@
+(function(){
+	var dir = "http://l.yimg.com/cv/ae/us/audience/070715/";	
+	YFPAD.rmx_ad.load_ad({
+		creative_id:"21888263",
+		campaign_id:"4331839",
+		buyer_line_id:"5700553",
+		seller_line_id:"4702361",
+		r0: "",
+		dir:dir,
+		nfv: 0,
+		ad_text : "",
+		clickTags: { },
+		location:"fpad",
+		flash: false,
+		width:300,
+		height:250,
+		ad_feedback: "http://ad.yieldmanager.com/pixel?id=1852499&t=2&crid=21888263&piggyback="+encodeURIComponent("http://surveylink.yahoo.com/wix/p0834715.aspx?source=rmx_ad_21888263_4331839_5700553_4702361"),
+		ired: "http://ads.bluelithium.com/clk?3,eJytjckOgjAURX8ISRummsbFIwXFWKdQSd1BBRzAbowVv94Boz.gWZ28e28edmhF.IIoN3dLv3T8KqfYxd5TShUUFqKUekM8xIGLrKbUGpY7wgEmtkAhvGBku6qhp4ZnlPS-JO90PD3D2vSnrrpk8BcYOYXi48nrL9SMwGZwuwoUhb-acBYswjLjZpYmeJGtLjyNG97hA2fKmaWRmR8ByTZu5q28S.NdjizLGGN3-V5rW-n2Aeq6U.g=,$http://finance.yahoo.com/broker-comparison",
+		imge: { l:dir+"300x250uy0ashfcr.jpg", w:300, h:250},
+		pixels:[
+								]
+	});
+})();

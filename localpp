@@ -1,0 +1,13 @@
+#! /bin/bash
+
+#gnome-terminal -x ./runserver
+
+for i in 10 50 100 500 1000 5000 10000 15000 20000 25000 30000 35000 40000 45000 50000 55000 60000 65000 65535
+do 
+	for j in 1 5 10 50 100 500 1000 2000 5000 8000 10000
+		do 
+			echo ""
+			echo "testing... datasize is: $i, data number is: $j"
+			./client localhost 18115 $i $j
+		done
+done

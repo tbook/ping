@@ -1,0 +1,627 @@
+
+testing... datasize is: 10, data number is: 1
+The average latency is 0.033ms.
+
+testing... datasize is: 10, data number is: 5
+The average latency is 0.024ms.
+
+testing... datasize is: 10, data number is: 10
+The average latency is 0.029ms.
+
+testing... datasize is: 10, data number is: 50
+The average latency is 0.012ms.
+
+testing... datasize is: 10, data number is: 100
+The average latency is 0.013ms.
+
+testing... datasize is: 10, data number is: 500
+The average latency is 0.015ms.
+
+testing... datasize is: 10, data number is: 1000
+The average latency is 0.014ms.
+
+testing... datasize is: 10, data number is: 2000
+The average latency is 0.011ms.
+
+testing... datasize is: 10, data number is: 5000
+The average latency is 0.015ms.
+
+testing... datasize is: 10, data number is: 8000
+The average latency is 0.029ms.
+
+testing... datasize is: 10, data number is: 10000
+The average latency is 0.029ms.
+
+testing... datasize is: 50, data number is: 1
+The average latency is 0.097ms.
+
+testing... datasize is: 50, data number is: 5
+The average latency is 0.064ms.
+
+testing... datasize is: 50, data number is: 10
+The average latency is 0.032ms.
+
+testing... datasize is: 50, data number is: 50
+The average latency is 0.036ms.
+
+testing... datasize is: 50, data number is: 100
+The average latency is 0.034ms.
+
+testing... datasize is: 50, data number is: 500
+The average latency is 0.029ms.
+
+testing... datasize is: 50, data number is: 1000
+The average latency is 0.027ms.
+
+testing... datasize is: 50, data number is: 2000
+The average latency is 0.029ms.
+
+testing... datasize is: 50, data number is: 5000
+The average latency is 0.029ms.
+
+testing... datasize is: 50, data number is: 8000
+The average latency is 0.028ms.
+
+testing... datasize is: 50, data number is: 10000
+The average latency is 0.028ms.
+
+testing... datasize is: 100, data number is: 1
+The average latency is 0.112ms.
+
+testing... datasize is: 100, data number is: 5
+The average latency is 0.039ms.
+
+testing... datasize is: 100, data number is: 10
+The average latency is 0.078ms.
+
+testing... datasize is: 100, data number is: 50
+The average latency is 0.032ms.
+
+testing... datasize is: 100, data number is: 100
+The average latency is 0.034ms.
+
+testing... datasize is: 100, data number is: 500
+The average latency is 0.029ms.
+
+testing... datasize is: 100, data number is: 1000
+The average latency is 0.032ms.
+
+testing... datasize is: 100, data number is: 2000
+The average latency is 0.029ms.
+
+testing... datasize is: 100, data number is: 5000
+The average latency is 0.029ms.
+
+testing... datasize is: 100, data number is: 8000
+The average latency is 0.029ms.
+
+testing... datasize is: 100, data number is: 10000
+The average latency is 0.029ms.
+
+testing... datasize is: 500, data number is: 1
+The average latency is 0.115ms.
+
+testing... datasize is: 500, data number is: 5
+The average latency is 0.047ms.
+
+testing... datasize is: 500, data number is: 10
+The average latency is 0.034ms.
+
+testing... datasize is: 500, data number is: 50
+The average latency is 0.028ms.
+
+testing... datasize is: 500, data number is: 100
+The average latency is 0.029ms.
+
+testing... datasize is: 500, data number is: 500
+The average latency is 0.029ms.
+
+testing... datasize is: 500, data number is: 1000
+The average latency is 0.028ms.
+
+testing... datasize is: 500, data number is: 2000
+The average latency is 0.018ms.
+
+testing... datasize is: 500, data number is: 5000
+The average latency is 0.027ms.
+
+testing... datasize is: 500, data number is: 8000
+The average latency is 0.029ms.
+
+testing... datasize is: 500, data number is: 10000
+The average latency is 0.029ms.
+
+testing... datasize is: 1000, data number is: 1
+The average latency is 0.178ms.
+
+testing... datasize is: 1000, data number is: 5
+The average latency is 0.100ms.
+
+testing... datasize is: 1000, data number is: 10
+The average latency is 0.105ms.
+
+testing... datasize is: 1000, data number is: 50
+The average latency is 0.033ms.
+
+testing... datasize is: 1000, data number is: 100
+The average latency is 0.034ms.
+
+testing... datasize is: 1000, data number is: 500
+The average latency is 0.031ms.
+
+testing... datasize is: 1000, data number is: 1000
+The average latency is 0.031ms.
+
+testing... datasize is: 1000, data number is: 2000
+The average latency is 0.029ms.
+
+testing... datasize is: 1000, data number is: 5000
+The average latency is 0.029ms.
+
+testing... datasize is: 1000, data number is: 8000
+The average latency is 0.029ms.
+
+testing... datasize is: 1000, data number is: 10000
+The average latency is 0.030ms.
+
+testing... datasize is: 5000, data number is: 1
+The average latency is 0.150ms.
+
+testing... datasize is: 5000, data number is: 5
+The average latency is 0.141ms.
+
+testing... datasize is: 5000, data number is: 10
+The average latency is 0.045ms.
+
+testing... datasize is: 5000, data number is: 50
+The average latency is 0.045ms.
+
+testing... datasize is: 5000, data number is: 100
+The average latency is 0.034ms.
+
+testing... datasize is: 5000, data number is: 500
+The average latency is 0.033ms.
+
+testing... datasize is: 5000, data number is: 1000
+The average latency is 0.034ms.
+
+testing... datasize is: 5000, data number is: 2000
+The average latency is 0.033ms.
+
+testing... datasize is: 5000, data number is: 5000
+The average latency is 0.034ms.
+
+testing... datasize is: 5000, data number is: 8000
+The average latency is 0.033ms.
+
+testing... datasize is: 5000, data number is: 10000
+The average latency is 0.033ms.
+
+testing... datasize is: 10000, data number is: 1
+The average latency is 0.109ms.
+
+testing... datasize is: 10000, data number is: 5
+The average latency is 0.058ms.
+
+testing... datasize is: 10000, data number is: 10
+The average latency is 0.072ms.
+
+testing... datasize is: 10000, data number is: 50
+The average latency is 0.039ms.
+
+testing... datasize is: 10000, data number is: 100
+The average latency is 0.043ms.
+
+testing... datasize is: 10000, data number is: 500
+The average latency is 0.044ms.
+
+testing... datasize is: 10000, data number is: 1000
+The average latency is 0.043ms.
+
+testing... datasize is: 10000, data number is: 2000
+The average latency is 0.042ms.
+
+testing... datasize is: 10000, data number is: 5000
+The average latency is 0.040ms.
+
+testing... datasize is: 10000, data number is: 8000
+The average latency is 0.041ms.
+
+testing... datasize is: 10000, data number is: 10000
+The average latency is 0.040ms.
+
+testing... datasize is: 15000, data number is: 1
+The average latency is 0.110ms.
+
+testing... datasize is: 15000, data number is: 5
+The average latency is 0.062ms.
+
+testing... datasize is: 15000, data number is: 10
+The average latency is 0.054ms.
+
+testing... datasize is: 15000, data number is: 50
+The average latency is 0.064ms.
+
+testing... datasize is: 15000, data number is: 100
+The average latency is 0.049ms.
+
+testing... datasize is: 15000, data number is: 500
+The average latency is 0.050ms.
+
+testing... datasize is: 15000, data number is: 1000
+The average latency is 0.048ms.
+
+testing... datasize is: 15000, data number is: 2000
+The average latency is 0.042ms.
+
+testing... datasize is: 15000, data number is: 5000
+The average latency is 0.045ms.
+
+testing... datasize is: 15000, data number is: 8000
+The average latency is 0.047ms.
+
+testing... datasize is: 15000, data number is: 10000
+The average latency is 0.048ms.
+
+testing... datasize is: 20000, data number is: 1
+The average latency is 0.143ms.
+
+testing... datasize is: 20000, data number is: 5
+The average latency is 0.090ms.
+
+testing... datasize is: 20000, data number is: 10
+The average latency is 0.103ms.
+
+testing... datasize is: 20000, data number is: 50
+The average latency is 0.079ms.
+
+testing... datasize is: 20000, data number is: 100
+The average latency is 0.065ms.
+
+testing... datasize is: 20000, data number is: 500
+The average latency is 0.060ms.
+
+testing... datasize is: 20000, data number is: 1000
+The average latency is 0.058ms.
+
+testing... datasize is: 20000, data number is: 2000
+The average latency is 0.072ms.
+
+testing... datasize is: 20000, data number is: 5000
+The average latency is 0.054ms.
+
+testing... datasize is: 20000, data number is: 8000
+The average latency is 0.051ms.
+
+testing... datasize is: 20000, data number is: 10000
+The average latency is 0.065ms.
+
+testing... datasize is: 25000, data number is: 1
+The average latency is 0.196ms.
+
+testing... datasize is: 25000, data number is: 5
+The average latency is 0.082ms.
+
+testing... datasize is: 25000, data number is: 10
+The average latency is 0.082ms.
+
+testing... datasize is: 25000, data number is: 50
+The average latency is 0.075ms.
+
+testing... datasize is: 25000, data number is: 100
+The average latency is 0.064ms.
+
+testing... datasize is: 25000, data number is: 500
+The average latency is 0.065ms.
+
+testing... datasize is: 25000, data number is: 1000
+The average latency is 0.064ms.
+
+testing... datasize is: 25000, data number is: 2000
+The average latency is 0.064ms.
+
+testing... datasize is: 25000, data number is: 5000
+The average latency is 0.066ms.
+
+testing... datasize is: 25000, data number is: 8000
+The average latency is 0.067ms.
+
+testing... datasize is: 25000, data number is: 10000
+The average latency is 0.059ms.
+
+testing... datasize is: 30000, data number is: 1
+The average latency is 0.191ms.
+
+testing... datasize is: 30000, data number is: 5
+The average latency is 0.137ms.
+
+testing... datasize is: 30000, data number is: 10
+The average latency is 0.085ms.
+
+testing... datasize is: 30000, data number is: 50
+The average latency is 0.075ms.
+
+testing... datasize is: 30000, data number is: 100
+The average latency is 0.067ms.
+
+testing... datasize is: 30000, data number is: 500
+The average latency is 0.077ms.
+
+testing... datasize is: 30000, data number is: 1000
+The average latency is 0.074ms.
+
+testing... datasize is: 30000, data number is: 2000
+The average latency is 0.074ms.
+
+testing... datasize is: 30000, data number is: 5000
+The average latency is 0.075ms.
+
+testing... datasize is: 30000, data number is: 8000
+The average latency is 0.067ms.
+
+testing... datasize is: 30000, data number is: 10000
+The average latency is 0.042ms.
+
+testing... datasize is: 35000, data number is: 1
+The average latency is 0.176ms.
+
+testing... datasize is: 35000, data number is: 5
+The average latency is 0.123ms.
+
+testing... datasize is: 35000, data number is: 10
+The average latency is 0.108ms.
+
+testing... datasize is: 35000, data number is: 50
+The average latency is 0.089ms.
+
+testing... datasize is: 35000, data number is: 100
+The average latency is 0.087ms.
+
+testing... datasize is: 35000, data number is: 500
+The average latency is 0.082ms.
+
+testing... datasize is: 35000, data number is: 1000
+The average latency is 0.080ms.
+
+testing... datasize is: 35000, data number is: 2000
+The average latency is 0.079ms.
+
+testing... datasize is: 35000, data number is: 5000
+The average latency is 0.081ms.
+
+testing... datasize is: 35000, data number is: 8000
+The average latency is 0.082ms.
+
+testing... datasize is: 35000, data number is: 10000
+The average latency is 0.069ms.
+
+testing... datasize is: 40000, data number is: 1
+The average latency is 0.180ms.
+
+testing... datasize is: 40000, data number is: 5
+The average latency is 0.062ms.
+
+testing... datasize is: 40000, data number is: 10
+The average latency is 0.030ms.
+
+testing... datasize is: 40000, data number is: 50
+The average latency is 0.040ms.
+
+testing... datasize is: 40000, data number is: 100
+The average latency is 0.063ms.
+
+testing... datasize is: 40000, data number is: 500
+The average latency is 0.044ms.
+
+testing... datasize is: 40000, data number is: 1000
+The average latency is 0.086ms.
+
+testing... datasize is: 40000, data number is: 2000
+The average latency is 0.080ms.
+
+testing... datasize is: 40000, data number is: 5000
+The average latency is 0.076ms.
+
+testing... datasize is: 40000, data number is: 8000
+The average latency is 0.079ms.
+
+testing... datasize is: 40000, data number is: 10000
+The average latency is 0.076ms.
+
+testing... datasize is: 45000, data number is: 1
+The average latency is 0.141ms.
+
+testing... datasize is: 45000, data number is: 5
+The average latency is 0.052ms.
+
+testing... datasize is: 45000, data number is: 10
+The average latency is 0.112ms.
+
+testing... datasize is: 45000, data number is: 50
+The average latency is 0.083ms.
+
+testing... datasize is: 45000, data number is: 100
+The average latency is 0.082ms.
+
+testing... datasize is: 45000, data number is: 500
+The average latency is 0.091ms.
+
+testing... datasize is: 45000, data number is: 1000
+The average latency is 0.091ms.
+
+testing... datasize is: 45000, data number is: 2000
+The average latency is 0.085ms.
+
+testing... datasize is: 45000, data number is: 5000
+The average latency is 0.052ms.
+
+testing... datasize is: 45000, data number is: 8000
+The average latency is 0.045ms.
+
+testing... datasize is: 45000, data number is: 10000
+The average latency is 0.050ms.
+
+testing... datasize is: 50000, data number is: 1
+The average latency is 0.102ms.
+
+testing... datasize is: 50000, data number is: 5
+The average latency is 0.054ms.
+
+testing... datasize is: 50000, data number is: 10
+The average latency is 0.049ms.
+
+testing... datasize is: 50000, data number is: 50
+The average latency is 0.051ms.
+
+testing... datasize is: 50000, data number is: 100
+The average latency is 0.037ms.
+
+testing... datasize is: 50000, data number is: 500
+The average latency is 0.064ms.
+
+testing... datasize is: 50000, data number is: 1000
+The average latency is 0.071ms.
+
+testing... datasize is: 50000, data number is: 2000
+The average latency is 0.045ms.
+
+testing... datasize is: 50000, data number is: 5000
+The average latency is 0.048ms.
+
+testing... datasize is: 50000, data number is: 8000
+The average latency is 0.042ms.
+
+testing... datasize is: 50000, data number is: 10000
+The average latency is 0.049ms.
+
+testing... datasize is: 55000, data number is: 1
+The average latency is 0.075ms.
+
+testing... datasize is: 55000, data number is: 5
+The average latency is 0.044ms.
+
+testing... datasize is: 55000, data number is: 10
+The average latency is 0.167ms.
+
+testing... datasize is: 55000, data number is: 50
+The average latency is 0.095ms.
+
+testing... datasize is: 55000, data number is: 100
+The average latency is 0.101ms.
+
+testing... datasize is: 55000, data number is: 500
+The average latency is 0.065ms.
+
+testing... datasize is: 55000, data number is: 1000
+The average latency is 0.061ms.
+
+testing... datasize is: 55000, data number is: 2000
+The average latency is 0.054ms.
+
+testing... datasize is: 55000, data number is: 5000
+The average latency is 0.088ms.
+
+testing... datasize is: 55000, data number is: 8000
+The average latency is 0.074ms.
+
+testing... datasize is: 55000, data number is: 10000
+The average latency is 0.092ms.
+
+testing... datasize is: 60000, data number is: 1
+The average latency is 0.306ms.
+
+testing... datasize is: 60000, data number is: 5
+The average latency is 0.161ms.
+
+testing... datasize is: 60000, data number is: 10
+The average latency is 0.124ms.
+
+testing... datasize is: 60000, data number is: 50
+The average latency is 0.117ms.
+
+testing... datasize is: 60000, data number is: 100
+The average latency is 0.113ms.
+
+testing... datasize is: 60000, data number is: 500
+The average latency is 0.085ms.
+
+testing... datasize is: 60000, data number is: 1000
+The average latency is 0.050ms.
+
+testing... datasize is: 60000, data number is: 2000
+The average latency is 0.108ms.
+
+testing... datasize is: 60000, data number is: 5000
+The average latency is 0.090ms.
+
+testing... datasize is: 60000, data number is: 8000
+The average latency is 0.090ms.
+
+testing... datasize is: 60000, data number is: 10000
+The average latency is 0.077ms.
+
+testing... datasize is: 65000, data number is: 1
+The average latency is 0.280ms.
+
+testing... datasize is: 65000, data number is: 5
+The average latency is 0.164ms.
+
+testing... datasize is: 65000, data number is: 10
+The average latency is 0.161ms.
+
+testing... datasize is: 65000, data number is: 50
+The average latency is 0.131ms.
+
+testing... datasize is: 65000, data number is: 100
+The average latency is 0.127ms.
+
+testing... datasize is: 65000, data number is: 500
+The average latency is 0.115ms.
+
+testing... datasize is: 65000, data number is: 1000
+The average latency is 0.110ms.
+
+testing... datasize is: 65000, data number is: 2000
+The average latency is 0.113ms.
+
+testing... datasize is: 65000, data number is: 5000
+The average latency is 0.105ms.
+
+testing... datasize is: 65000, data number is: 8000
+The average latency is 0.101ms.
+
+testing... datasize is: 65000, data number is: 10000
+The average latency is 0.109ms.
+
+testing... datasize is: 65535, data number is: 1
+The average latency is 0.275ms.
+
+testing... datasize is: 65535, data number is: 5
+The average latency is 0.178ms.
+
+testing... datasize is: 65535, data number is: 10
+The average latency is 0.144ms.
+
+testing... datasize is: 65535, data number is: 50
+The average latency is 0.123ms.
+
+testing... datasize is: 65535, data number is: 100
+The average latency is 0.095ms.
+
+testing... datasize is: 65535, data number is: 500
+The average latency is 0.110ms.
+
+testing... datasize is: 65535, data number is: 1000
+The average latency is 0.095ms.
+
+testing... datasize is: 65535, data number is: 2000
+The average latency is 0.093ms.
+
+testing... datasize is: 65535, data number is: 5000
+The average latency is 0.097ms.
+
+testing... datasize is: 65535, data number is: 8000
+The average latency is 0.104ms.
+
+testing... datasize is: 65535, data number is: 10000
+The average latency is 0.110ms.

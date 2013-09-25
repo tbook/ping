@@ -1,0 +1,22 @@
+(function(){
+	YFPAD.generic.load_ad({
+		creative_id:"20676945",
+		campaign_id:"4729038",
+		buyer_line_id:"6165630",
+		seller_line_id:"5665225",
+		type:"ad_tl1",
+		location:"tl1",		
+		clickTags: {},
+		flash: false,
+		footprint:  '<style>'+
+					'.ad-tl2b {text-align:left;margin-left:10px;line-height:1.2em;margin-bottom:10px;}'+
+					'.ad-tl2b p.y-fp-pg-controls {display:block;margin-bottom:2px;background-position:left -2275px;padding-top:11px;}'+
+					'</style>'+
+					'<div class="ad-tl2b small">'+
+					'	<p class="y-fp-pg-controls"><a href="http://ads.bluelithium.com/clk?3,eJytjdsKgkAYhF9Iwj9PC0sXv2hhuFvaWnipuSrlshcdtnr6EIVeoO9iGGYGBhxaQyMD2QDxvQqWTkvBBc.xW1m70rIppYEHSzfwCViD1Br3DWEY5p24hTjCXH3AmQ4T5GTK92TUaMOG17Gb6rbPJf6FiFzDYvbJ-ItdRDB93J-FHYe.WeFwkRmutn0qEtidsjsT64G9ba9U20sqYsMvaJdqrcoPV.x3sLIsY8ziXfVaL85afQGHp1Td,$http://overview.mail.yahoo.com/mobile" role="presentation"><img src="http://l.yimg.com/cv/ae/us/audience/130503/120x45uok1q47d2.jpg" width="120" height="45" border="0" alt="" /></a></p>'+
+					'	<p><a href="http://ads.bluelithium.com/clk?3,eJytjdsKgkAYhF9Iwj9PC0sXv2hhuFvaWnipuSrlshcdtnr6EIVeoO9iGGYGBhxaQyMD2QDxvQqWTkvBBc.xW1m70rIppYEHSzfwCViD1Br3DWEY5p24hTjCXH3AmQ4T5GTK92TUaMOG17Gb6rbPJf6FiFzDYvbJ-ItdRDB93J-FHYe.WeFwkRmutn0qEtidsjsT64G9ba9U20sqYsMvaJdqrcoPV.x3sLIsY8ziXfVaL85afQGHp1Td,$http://overview.mail.yahoo.com/mobile">The new mail tablet <br />app is here </a></p>'+
+					'</div>',
+		pixels:[
+			"http://pclick.internal.yahoo.com/p/s=1197657449&t=FohyRI4JbJ"					]
+	});
+})();

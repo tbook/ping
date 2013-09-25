@@ -159,6 +159,15 @@ int main(int argc, char **argv) {
   }
 
   if (argc > 2) {
+    if (argc == 3) {
+        fprintf(stderr, "Input server root!\n");  // required according to handout
+          return -1;
+    } else {
+        if (parse_root(argv[3]) < 0) {
+          fprintf(stderr, "Invalid server root\n");
+          return -1;
+        }
+    }
     mode = argv[2];
     int modelen = strlen(mode);
     if (modelen > 2) {
@@ -166,13 +175,6 @@ int main(int argc, char **argv) {
         printf("Starting in web mode\n");
         webMode = 1;
       }
-    }
-  }
-
-  if (argc > 3) {
-    if (parse_root(argv[3]) < 0) {
-      fprintf(stderr, "Invalid server root\n");
-      return -1;
     }
   }
 
