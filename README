@@ -5,9 +5,15 @@ Li, Lung
 Xu, Xiaoran
 
 Description:
-  Server_text.c:  server code, can work in two modes: ping-pong and web server mode
-  Client_text.c:  client code, send data of various sizes to server and recive a pong message including the same data. client send data multiple times to calculate average latency time.
-  httpd.c:        work in web mode, parse requested file path, and send file content to browser for rendering
+  Server_text.c:  server code, can work in two modes: ping-pong and web server
+  mode
+  
+  Client_text.c:  client code, send data of various sizes to server and recive
+  a pong message including the same data. client send data multiple times to
+  calculate average latency time.
+  
+  httpd.c:        work in web mode, parse requested file path, and send file
+  content to browser for rendering
 
 Sources:
   Aside from the following sources, the code is the product of the group
@@ -23,13 +29,19 @@ Testing:
 
      Part I:
 
-     We tested correctness and scalebility of ping-pong mode in three different ways:
+     We tested correctness and scalebility of ping-pong mode in three different
+     ways:
 
      1) localhost client to localhost server
-	We wrote a script file named localpp to test different combinations of data size (10-65535) and data numbers (1-10000) on local host. 
+     
+    We wrote a script file named localpp to test different combinations of data
+    size (10-65535) and data numbers (1-10000) on local host. 
      
      2) localhost client to clear servers
-	Similar script files were created to test ping-pong mode from local machine to clear servers. 
+     
+    Similar script files were created to test ping-pong mode from local machine
+    to clear servers. 
+    
         Script file names:
 	ringpp  for ring.clear.rice.edu
 	waterpp for water.clear.rice.edu
@@ -37,17 +49,22 @@ Testing:
 	glasspp for glass.clear.rice.edu
 
      3) clear server to clear server
+     
 	Script file name:  water2ringpp etc. 
 	
      How to test: 
 
-     1) start server with port 18115 (as in script file or other usable port from 18000 to 18200) 
+     1) start server with port 18115 (as in script file or other usable port
+     from 18000 to 18200) 
+     
 	./server 18115
 
      2) create executable script
+     
 	chmod +x scriptfilename
  
      3) type command in client terminal to test:
+     
 	./scriptfilename > scriptfilenameOutput.txt
 
 
@@ -56,30 +73,46 @@ Testing:
      We also tested concurrency of pingpong mode in three different ways:
 
      1) multiple local clients access local server
-	script file named localppconcurrency. the script file will spawn 5 new terminals and run concurrency test. localppconcurrency will run
-	testlocalconcurrency in each child terminal. 
+     
+    script file named localppconcurrency. the script file will spawn 5 new
+    terminals and run concurrency test. localppconcurrency will run
+    testlocalconcurrency in each child terminal. 
 
      2) multiple local clients access clear server
-        script file name: ringppconcurrency, waterppconcurrency etc. the script file will spawn 5 new terminals and run concurrency test. ringppconcurrency will run
-	testringconcurrency in each child terminal.
+     
+        script file name: ringppconcurrency, waterppconcurrency etc. the script
+        file will spawn 5 new terminals and run concurrency test.
+        ringppconcurrency will run testringconcurrency in each child terminal.
 
      3) multiple clear clients access clear server
-	mannually start three clients on three clear servers other than server itself
+     
+    mannually start three clients on three clear servers other than server
+    itself
 	
      How to test:
 
-     1) start pingpong server on local host with port 18115 (as in script file or other usable port from 18000 to 18200) 
+     1) start pingpong server on local host with port 18115 (as in script file
+     or other usable port from 18000 to 18200) 
+     
         ./server 18115
        
-     2) for first two tests, run script file locally to pop up new terminals to launch multiple clients
+     2) for first two tests, run script file locally to pop up new terminals to
+     launch multiple clients
+     
         ./scriptfilename 
      
-     3) for the third test, start pingpong server on one of the clear server then log into three other clear servers
+     3) for the third test, start pingpong server on one of the clear server
+     then log into three other clear servers
+     
         ./client serverIP port 65535 10000
         
    2. WWW web mode
-      for web mod, we downloaded two webpages google and yahoo for test. We used three different modern browsers including chrome, firefox, and IE to access the web pages when 
-      server work in www mode. In order to test concurrency, we opened multiple tabs in chrome, firefox, and IE, all access to the web server. Then we refresh all tabs at the 
+   
+      for web mod, we downloaded two webpages google and yahoo for test. We
+      used three different modern browsers including chrome, firefox, and IE to
+      access the web pages when server work in www mode. In order to test
+      concurrency, we opened multiple tabs in chrome, firefox, and IE, all
+      access to the web server. Then we refresh all tabs at the 
       same time to see if all tabs can load webpage correctly. 
 
  
